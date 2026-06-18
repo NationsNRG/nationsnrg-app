@@ -48,14 +48,15 @@ async function getDeals(
     }
   }
 
-  const response = await fetch(
-    `${
-      process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
-    }/api/intake/deal?${params.toString()}`,
-    {
-      cache: "no-store",
-    },
-  );
+const appUrl =
+  process.env.NEXT_PUBLIC_APP_URL ??
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "https://nationsnrg.com");
+
+const response = await fetch(`${appUrl}/api/intake/deal?${params.toString()}`, {
+  cache: "no-store",
+});
 
   if (!response.ok) {
     throw new Error(`Failed to load deals: ${response.status}`);
