@@ -2,6 +2,8 @@
 
 import { usePathname } from "next/navigation";
 
+import LogoutButton from '@/components/auth/LogoutButton';
+
 interface NavItem {
   label: string;
   href: string;
@@ -22,25 +24,29 @@ export default function AdminNav() {
 
   return (
     <nav className="border-b border-gray-800 bg-black">
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-6 py-4">
-        {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+    <div className="mx-auto flex max-w-7xl items-center gap-3 px-6 py-4">
+      {NAV_ITEMS.map((item) => {
+        const isActive = pathname === item.href;
 
-          return (
-            <a
-              key={item.href}
-              href={item.href}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                isActive
-                  ? "bg-white text-black"
-                  : "bg-gray-900 text-white hover:bg-gray-800"
-              }`}
-            >
-              {item.label}
-            </a>
-          );
-        })}
+        return (
+          <a
+            key={item.href}
+            href={item.href}
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+              isActive
+                ? "bg-white text-black"
+                : "bg-gray-900 text-white hover:bg-gray-800"
+            }`}
+          >
+            {item.label}
+          </a>
+        );
+      })}
+
+      <div className="ml-auto">
+        <LogoutButton />
       </div>
+    </div>
     </nav>
   );
 }
