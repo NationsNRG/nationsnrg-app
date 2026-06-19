@@ -77,45 +77,52 @@ checkAuth()
 
 /* LOAD LEADS */
 
-const loadLeads = useCallback(async(teamId:string)=>{
+const loadLeads = useCallback(async (teamId: string | null) => {
+  if (!teamId) {
+    console.error("LOAD LEADS ERROR: missing teamId");
+    setError("No team selected");
+    setLoading(false);
+    return;
+  }
 
-try{
+  try {
+    setLoading(true);
+    setError(null);
 
-setLoading(true)
-setError(null)
+    const response = await supabase
+      .from("calculations")
+      .select(`
+        *,
+        business_types(
+          id,
+          name,
+          electricity_kwh_per_sqft,
+          gas_therms_per_sqft
+        )
+      `)
+      .eq("team_id", teamId)
+      .order("created_at", { ascending: false });
 
-const { data,error } = await supabase
-.from('calculations')
-.select(`
-*,
-business_types(
-id,
-name,
-electricity_kwh_per_sqft,
-gas_therms_per_sqft
-)
-`)
-.eq('team_id',teamId)
-.order('created_at',{ascending:false})
+    if (response.error) {
+      console.error("LOAD LEADS SUPABASE ERROR", {
+        message: response.error.message,
+        details: response.error.details,
+        hint: response.error.hint,
+        code: response.error.code,
+      });
 
-if(error) throw error
+      setError(response.error.message || "Failed to load leads");
+      return;
+    }
 
-if(data){
-setLeads(data as CalculationWithBusiness[])
-}
-
-}catch(err){
-
-console.error(err)
-setError('Failed to load leads')
-
-}finally{
-
-setLoading(false)
-
-}
-
-},[])
+    setLeads((response.data ?? []) as CalculationWithBusiness[]);
+  } catch (err) {
+    console.error("LOAD LEADS JS ERROR", err);
+    setError(err instanceof Error ? err.message : "Failed to load leads");
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
 // Add this TEMPORARY debug block after your useState declarations
 useEffect(() => {

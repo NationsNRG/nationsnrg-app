@@ -47,10 +47,13 @@ class SupplierMatchingEngine {
             });
 
         // 🔍 ADD THIS TO CHECK THE RESPONSE
-console.log('🔧 RPC Response:', { suppliers, error });
+        console.log('🔧 RPC Response:', { suppliers, error });
 
-        if (error) {
-            console.error('Error matching suppliers:', error);
+                if (error) {
+                    console.error(
+        "SUPPLIER MATCHING ERROR",
+        JSON.stringify(error, null, 2)
+        );
             return {
                 suppliers: [],
                 topMatch: null,
