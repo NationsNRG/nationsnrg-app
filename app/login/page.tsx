@@ -27,7 +27,10 @@ export default function LoginPage() {
         if (error) {
             setMessage(error.message);
         } else {
-            router.push('/dashboard');
+            const params = new URLSearchParams(window.location.search);
+            const nextPath = params.get('next') || '/dashboard';
+
+            window.location.href = nextPath;
         }
         
         setLoading(false);
@@ -67,30 +70,37 @@ export default function LoginPage() {
                 </div>
                 
                 <form onSubmit={handleLogin} className="space-y-4">
+
                     <input
+                        id="email"
+                        name="email"
                         type="email"
+                        autoComplete="email"
                         placeholder="Email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full p-2 border rounded focus:ring-2 focus:ring-black focus:border-transparent"
                         required
                     />
-                    
+
                     <input
+                        id="password"
+                        name="password"
                         type="password"
+                        autoComplete="current-password"
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full p-2 border rounded focus:ring-2 focus:ring-black focus:border-transparent"
                         required
                     />
-                    
+
                     {message && (
                         <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
                             {message}
                         </div>
                     )}
-                    
+
                     <button
                         type="submit"
                         disabled={loading}
@@ -98,7 +108,7 @@ export default function LoginPage() {
                     >
                         {loading ? 'Loading...' : 'Sign In'}
                     </button>
-                    
+
                     <button
                         type="button"
                         onClick={handleSignUp}
@@ -107,7 +117,9 @@ export default function LoginPage() {
                     >
                         Create Account
                     </button>
-                </form>
+
+                </form>                
+                
             </div>
         </div>
     );
