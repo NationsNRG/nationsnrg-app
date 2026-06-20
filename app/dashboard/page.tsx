@@ -22,6 +22,8 @@ import { CalculationWithBusiness } from '@/lib/types';
 import TeamSwitcher from '@/app/components/TeamSwitcher';
 import Link from 'next/link';
 import LogoutButton from '@/components/auth/LogoutButton';
+import RoleGate from '@/components/auth/RoleGate';
+import { useUserRole } from '@/lib/auth/use-user-role';
 
 type EnrichedLead = CalculationWithBusiness & {
 daysRemaining:number
@@ -35,6 +37,8 @@ closeProbability:number
 export default function Dashboard() {
 
 const router = useRouter()
+
+const { role } = useUserRole();
 
 const [leads,setLeads] = useState<CalculationWithBusiness[]>([])
 const [loading,setLoading] = useState(true)
@@ -951,14 +955,17 @@ return(
                 </div>
             )}
         </div>
-        
-        <Link
-            href="/leads"
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 flex items-center"
-        >
-            <span className="mr-2">📊</span>
-            Lead Dashboard
-        </Link>
+        <RoleGate roles={["admin", "operator"]}>
+            <Link
+                href="/leads"
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 flex items-center"
+            >
+                <span className="mr-2">📊</span>
+                Lead Dashboard
+            </Link>
+        </RoleGate>  
+
+      <RoleGate roles={["admin", "operator"]}> 
         <Link
             href="/command-center"
             className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 flex items-center"
@@ -966,10 +973,37 @@ return(
             <span className="mr-2">🎮</span>
             Command Center
         </Link>
+      </RoleGate>  
+        {role ? (
+        <div className="rounded-full border px-3 py-1 text-xs font-medium">
+            {role.toUpperCase()}
+        </div>
+        ) : null}
+
         <TeamSwitcher />
         <LogoutButton />
     </div>
 </div>
+
+<RoleGate roles={["admin"]}>
+  <div className="mb-8 rounded-xl border bg-white p-4 shadow">
+    <h3 className="font-bold">
+      Administration
+    </h3>
+
+    <div className="mt-3 flex gap-3">
+
+      <Link href="/admin">
+        Admin Panel
+      </Link>
+
+      <Link href="/system/deal-runner">
+        Deal Runner
+      </Link>
+
+    </div>
+  </div>
+</RoleGate>
 
 {/* TOP METRICS */}
 
