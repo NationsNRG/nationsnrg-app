@@ -31,16 +31,16 @@ export default function TeamSwitcher({ className = '' }: TeamSwitcherProps) {
                 setError(null);
 
                 // Get current user and store their ID
-                const { data: { user }, error: userError } = await supabase.auth.getUser();
-                
-                if (userError) throw userError;
-                
-                if (!user) {
-                    if (mounted) {
-                        setTeams([]);
-                        setCurrentTeam(null);
-                    }
-                    return;
+                const {
+                  data: { user },
+                  error: userError,
+                } = await supabase.auth.getUser();
+
+                if (userError || !user) {
+                  setTeams([]);
+                  setCurrentTeam(null);
+                  setLoading(false);
+                  return;
                 }
 
                 // Store user ID for owner check

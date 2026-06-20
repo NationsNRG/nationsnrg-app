@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase';
 import { CalculationWithBusiness } from '@/lib/types';
 import TeamSwitcher from '@/app/components/TeamSwitcher';
 import Link from 'next/link';
+import LogoutButton from '@/components/auth/LogoutButton';
 
 type EnrichedLead = CalculationWithBusiness & {
 daysRemaining:number
@@ -965,7 +966,8 @@ return(
             <span className="mr-2">🎮</span>
             Command Center
         </Link>
-        <TeamSwitcher/>
+        <TeamSwitcher />
+        <LogoutButton />
     </div>
 </div>
 
