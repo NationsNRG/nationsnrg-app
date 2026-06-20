@@ -3,6 +3,7 @@
 import { ok, fail } from "@/lib/api/response";
 import { z } from "zod";
 import { getServiceClient } from "@/lib/supabase/server";
+import { requireApiRole } from "@/lib/auth/require-api-role";
 
 const requestSchema = z.object({
   supplierEntityId: z.string().trim().min(1),
@@ -18,6 +19,12 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const auth = await requireApiRole(request, ["admin"]);
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const body = requestSchema.parse(await request.json());
 
