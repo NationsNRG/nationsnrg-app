@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { getAllowedRoles } from "@/lib/auth/roles";
+import { getUserRole } from "@/lib/auth/get-user-role";
 
 const protectedPrefixes = [
   "/admin",
@@ -30,15 +32,27 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  if (user) {
+  if (!user) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.searchParams.set("next", pathname);
+
+    return NextResponse.redirect(loginUrl);
+  }
+
+  const allowedRoles = getAllowedRoles(pathname);
+
+  if (!allowedRoles) {
     return response;
   }
 
-  const loginUrl = request.nextUrl.clone();
-  loginUrl.pathname = "/login";
-  loginUrl.searchParams.set("next", pathname);
+  const role = await getUserRole(user.id);
 
-  return NextResponse.redirect(loginUrl);
+  if (!role || !allowedRoles.includes(role)) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  return response;
 }
 
 export const config = {
