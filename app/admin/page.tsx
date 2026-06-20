@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { supabase } from "@/lib/supabase";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 type LeadStatus = "new" | "contacted" | "quoted" | "closed";
 
@@ -332,7 +333,10 @@ export default function AdminDashboard() {
 
   return (
     <main className="p-10">
-      <h1 className="mb-6 text-3xl font-bold">Lead Dashboard</h1>
+      <div className="mb-6 flex items-center justify-between">
+      <h1 className="text-3xl font-bold">Lead Dashboard</h1>
+      <LogoutButton />
+      </div>
 
       <div className="mb-8 grid grid-cols-4 gap-4">
         <div className="rounded bg-green-100 p-4">
