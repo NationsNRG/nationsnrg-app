@@ -7,6 +7,7 @@ import {
   normalizeNullableTimestamp,
 } from '@/lib/pipeline/executionValidation';
 import { appendPricingExecutionFollowUpActivity } from '@/lib/pipeline/executionActivity';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 type PricingRequestExecutionUpdate =
   Database['public']['Tables']['pricing_request_executions']['Update'];
@@ -32,6 +33,15 @@ function badRequest(message: string) {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireApiRole(
+    request,
+    ['admin', 'operator'],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const body = (await request.json()) as PricingExecutionFollowUpInput;
     const executionId = normalizeNullableString(body.executionId);
