@@ -2,8 +2,17 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireApiRole } from "@/lib/auth/require-api-role";
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(
+  request: Request,
+): Promise<NextResponse> {
+  const auth = await requireApiRole(request, ["admin"]);
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
