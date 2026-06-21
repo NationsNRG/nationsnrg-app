@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import { generateProposal, proposalToJson } from '@/lib/pipeline/proposal';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 type RequestBody = {
   pipelineId?: string;
@@ -32,6 +33,15 @@ function badRequest(message: string) {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireApiRole(
+    request,
+    ['admin', 'operator'],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const body = (await request.json()) as RequestBody;
     const pipelineId = body.pipelineId?.trim();
