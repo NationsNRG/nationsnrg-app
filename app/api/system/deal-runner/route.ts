@@ -2,6 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireApiRole } from "@/lib/auth/require-api-role";
 
 const MAX_DEALS_PER_RUN = 25;
 
@@ -26,9 +27,19 @@ function isAuthorized(request: Request): boolean {
   return headerSecret === expected || bearerSecret === expected;
 }
 
+async function isAdminOrSystemAuthorized(request: Request): Promise<boolean> {
+  if (isAuthorized(request)) {
+    return true;
+  }
+
+  const auth = await requireApiRole(request, ["admin"]);
+
+  return auth.ok;
+}
+
 async function runDealRunner(request: Request): Promise<NextResponse> {
   try {
-    if (!isAuthorized(request)) {
+    if (!(await isAdminOrSystemAuthorized(request))) {
       return NextResponse.json(
         {
           ok: false,
