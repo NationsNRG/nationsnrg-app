@@ -7,6 +7,7 @@ import {
   validatePipelineStageInput,
   validatePipelineStageTransition,
 } from '@/lib/pipeline/validation';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 function getSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
