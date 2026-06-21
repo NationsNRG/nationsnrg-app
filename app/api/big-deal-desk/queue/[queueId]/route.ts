@@ -3,6 +3,7 @@
 import { ok, fail } from "@/lib/api/response";
 import { getServiceClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { requireApiRole } from "@/lib/auth/require-api-role";
 
 interface RouteContext {
   params: Promise<{
@@ -42,6 +43,15 @@ export async function PATCH(
   request: Request,
   context: RouteContext,
 ) {
+  const auth = await requireApiRole(
+    request,
+    ["admin", "operator"],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const { queueId } = await context.params;
     const body = patchSchema.parse(await request.json());
