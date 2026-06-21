@@ -10,6 +10,7 @@ import {
   normalizeNullableTimestamp,
 } from '@/lib/pipeline/executionValidation';
 import { appendEnrollmentExecutionStatusChangedActivity } from '@/lib/pipeline/executionActivity';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 type EnrollmentExecutionUpdate =
   Database['public']['Tables']['enrollment_executions']['Update'];
@@ -35,6 +36,15 @@ function badRequest(message: string) {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireApiRole(
+    request,
+    ['admin', 'operator'],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const body = (await request.json()) as EnrollmentExecutionStatusUpdateInput;
     const executionId = normalizeNullableString(body.executionId);
