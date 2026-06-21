@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 type RequestBody = {
   communicationId?: string;
@@ -56,6 +57,15 @@ function assertStatus(value: string | null | undefined) {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireApiRole(
+    request,
+    ['admin', 'operator'],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const body = (await request.json()) as RequestBody;
 
