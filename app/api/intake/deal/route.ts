@@ -3,6 +3,7 @@
 import { ok, fail } from "@/lib/api/response";
 import { getServiceClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { requireApiRole } from "@/lib/auth/require-api-role";
 
 function parseNumber(value: string | null): number | null {
   if (!value) return null;
@@ -18,6 +19,12 @@ const createDealSchema = z.object({
 });
 
 export async function GET(request: Request) {
+  const auth = await requireApiRole(request, ["admin", "operator"]);
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const { searchParams } = new URL(request.url);
 
@@ -92,6 +99,12 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const auth = await requireApiRole(request, ["admin", "operator"]);
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const body = createDealSchema.parse(await request.json());
     const supabase = getServiceClient();
