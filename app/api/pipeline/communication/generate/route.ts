@@ -6,6 +6,7 @@ import {
   generateCommunication,
   type CommunicationType,
 } from '@/lib/pipeline/communication';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 type RequestBody = {
   pipelineId?: string;
@@ -63,6 +64,15 @@ function assertCommunicationType(value: string | null | undefined): Communicatio
 }
 
 export async function POST(request: Request) {
+  const auth = await requireApiRole(
+    request,
+    ['admin', 'operator'],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const body = (await request.json()) as RequestBody;
     const pipelineId = normalizeNullableString(body.pipelineId);
