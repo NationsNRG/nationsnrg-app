@@ -8,6 +8,7 @@ import {
   validatePipelineStageTransition,
   validateQuoteReceivedInput,
 } from '@/lib/pipeline/validation';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 function getSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -26,6 +27,15 @@ function getSupabase() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireApiRole(
+    request,
+    ['admin', 'operator'],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const body = await request.json();
     const input = validateQuoteReceivedInput(body);
