@@ -1,8 +1,17 @@
 // app/api/system/deal-runner/manual/route.ts
 
 import { NextResponse } from "next/server";
+import { requireApiRole } from "@/lib/auth/require-api-role";
 
-export async function POST(): Promise<NextResponse> {
+export async function POST(
+  request: Request,
+): Promise<NextResponse> {
+  const auth = await requireApiRole(request, ["admin"]);
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const secret = process.env.DEAL_RUNNER_SECRET;
