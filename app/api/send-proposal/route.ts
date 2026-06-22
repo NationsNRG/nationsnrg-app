@@ -1,9 +1,27 @@
 import { Resend } from 'resend';
 import { NextResponse } from 'next/server';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
+
+    const auth = await requireApiRole(
+        req,
+        ['admin', 'operator'],
+    );
+
+    if (!auth.ok) {
+        return NextResponse.json(
+            {
+                error: 'Unauthorized',
+            },
+            {
+                status: 401,
+            },
+        );
+    }
+
     try {
         const { 
             user_email, 
