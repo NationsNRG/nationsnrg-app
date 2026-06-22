@@ -2,8 +2,25 @@ import { NextResponse } from 'next/server'
 import { submitBoxEnrollment } from '@/lib/integrations/box/client'
 import { validateEnrollmentRequest } from '@/lib/marketplace/validation'
 import type { EnrollmentRequestBody } from '@/lib/marketplace/types'
+import { requireApiRole } from '@/lib/auth/require-api-role'
 
 export async function POST(request: Request) {
+
+  const auth = await requireApiRole(
+    request,
+    ['admin', 'operator'],
+  )
+
+  if (!auth.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Unauthorized',
+      },
+      { status: 401 },
+    )
+  }
+
   let body: EnrollmentRequestBody
 
   try {
