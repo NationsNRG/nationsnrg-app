@@ -2,8 +2,24 @@ import { NextResponse } from 'next/server'
 import { lookupBoxPricing } from '@/lib/integrations/box/client'
 import { validatePricingRequest } from '@/lib/marketplace/validation'
 import type { PricingRequestBody } from '@/lib/marketplace/types'
+import { requireApiRole } from '@/lib/auth/require-api-role'
 
 export async function POST(request: Request) {
+  const auth = await requireApiRole(
+    request,
+    ['admin', 'operator'],
+  )
+
+  if (!auth.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Unauthorized',
+      },
+      { status: 401 },
+    )
+  }
+
   let body: PricingRequestBody
 
   try {
