@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { analyticsEngine } from '@/lib/analyticsEngine';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 interface ErrorResponseBody {
   success: false;
@@ -41,7 +42,16 @@ function parseDateParam(value: string | null): Date | null {
 
 export async function GET(
   req: Request
-): Promise<NextResponse<SuccessResponseBody<Awaited<ReturnType<typeof analyticsEngine.generateDailyMetrics>>> | ErrorResponseBody>> {
+): Promise<Response> {
+  const auth = await requireApiRole(
+    req,
+    ["admin", "operator"],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const url = new URL(req.url);
     const rawDate = url.searchParams.get('date');
