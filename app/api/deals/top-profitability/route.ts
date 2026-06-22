@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import type { Database, Json } from '@/types/supabase';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 type PublicSchema = Database['public'];
 type LeadRow = PublicSchema['Tables']['discovered_leads']['Row'];
@@ -128,6 +129,12 @@ function createErrorResponse(
 export async function GET(
   req: NextRequest
 ): Promise<NextResponse<ApiSuccessResponse | ApiErrorResponse>> {
+  const auth = await requireApiRole(req, ["admin", "operator"]);
+
+  if (!auth.ok) {
+    return createErrorResponse("Unauthorized", 401);
+  }
+
   try {
     const limit = normalizeLimit(req.nextUrl.searchParams.get('limit'));
 
