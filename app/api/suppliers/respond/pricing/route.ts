@@ -5,6 +5,7 @@ import type { NormalizedPricingResponse } from '@/lib/integrations/types';
 
 type RequestBody = {
   supplierInboundRequestId?: string;
+  supplierAccessToken?: string;
   response?: NormalizedPricingResponse;
   selected?: boolean;
 };
@@ -56,8 +57,14 @@ export async function POST(req: Request) {
     const body = (await req.json()) as RequestBody;
     const supplierInboundRequestId = normalizeNullableString(body.supplierInboundRequestId);
 
+    const supplierAccessToken = normalizeNullableString(body.supplierAccessToken);
+
     if (!supplierInboundRequestId) {
       return badRequest('supplierInboundRequestId required');
+    }
+
+    if (!supplierAccessToken) {
+      return badRequest('supplierAccessToken required');
     }
 
     if (!body.response) {
@@ -81,6 +88,15 @@ export async function POST(req: Request) {
     }
 
     const payload = inboundRes.data.payload;
+    const storedSupplierAccessToken = extractStringField(payload, 'supplierAccessToken');
+
+    if (storedSupplierAccessToken !== supplierAccessToken) {
+      return NextResponse.json(
+        { error: 'Unauthorized supplier response.' },
+        { status: 401 },
+      );
+    }
+
     const pipelineId = extractStringField(payload, 'pipelineId');
     const pricingRequestId = extractStringField(payload, 'pricingRequestId');
     const pricingExecutionId = extractStringField(payload, 'pricingExecutionId');
