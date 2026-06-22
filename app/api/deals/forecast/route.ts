@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { dealEconomics } from "@/lib/dealEconomics";
+import { requireApiRole } from "@/lib/auth/require-api-role";
 
 const MAX_MONTHS = 36;
 const MIN_MONTHS = 1;
@@ -33,7 +34,7 @@ function errorResponse(
 
 export async function GET(
   req: Request,
-): Promise<NextResponse> {
+): Promise<Response> {
   const startTime = Date.now();
 
   try {
