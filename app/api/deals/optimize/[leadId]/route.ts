@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { dealEconomics } from '@/lib/dealEconomics';
 import type { Database, Json } from '@/types/supabase';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 type SystemActivityInsert =
   Database['public']['Tables']['system_activity']['Insert'];
@@ -95,9 +96,18 @@ async function logSystemActivity(
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   context: RouteContext
 ): Promise<NextResponse<ApiSuccessResponse | ApiErrorResponse>> {
+  const auth = await requireApiRole(
+    req,
+    ['admin', 'operator'],
+  );
+
+  if (!auth.ok) {
+    return createErrorResponse('Unauthorized', 401);
+  }
+
   const supabase = getSupabaseClient();
 
   let leadId = '';
