@@ -3,6 +3,7 @@
 import { ok, fail } from "@/lib/api/response";
 import { getServiceClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { requireApiRole } from "@/lib/auth/require-api-role";
 
 const createSchema = z.object({
   viewScope: z.enum(["intake_dashboard", "big_deal_desk", "portfolio_rollup"]),
@@ -12,6 +13,15 @@ const createSchema = z.object({
 });
 
 export async function GET(request: Request): Promise<Response> {
+  const auth = await requireApiRole(
+    request,
+    ["admin", "operator"],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const viewScope = searchParams.get("viewScope");
@@ -47,6 +57,15 @@ return fail(error instanceof Error ? error.message : "Unknown error");
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const auth = await requireApiRole(
+    request,
+    ["admin", "operator"],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const body = createSchema.parse(await request.json());
 
