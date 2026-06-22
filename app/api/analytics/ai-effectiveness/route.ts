@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { analyticsEngine } from '@/lib/analyticsEngine';
+import { requireApiRole } from '@/lib/auth/require-api-role';
 
 interface ErrorResponseBody {
   success: false;
@@ -24,13 +25,15 @@ function createErrorResponse(
   );
 }
 
-export async function GET(): Promise<
-  NextResponse<
-    SuccessResponseBody<
-      Awaited<ReturnType<typeof analyticsEngine.getAIEffectiveness>>
-    > | ErrorResponseBody
-  >
-> {
+export async function GET(request: Request): Promise<Response> {
+    const auth = await requireApiRole(
+    request,
+    ["admin", "operator"],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
   try {
     const effectiveness = await analyticsEngine.getAIEffectiveness();
 
