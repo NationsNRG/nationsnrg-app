@@ -37,6 +37,15 @@ export async function GET(
 ): Promise<Response> {
   const startTime = Date.now();
 
+    const auth = await requireApiRole(
+    req,
+    ["admin", "operator"],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const url = new URL(req.url);
     const months = parseMonths(
