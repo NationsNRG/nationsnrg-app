@@ -3,6 +3,7 @@
 import { ok, fail } from "@/lib/api/response";
 import { getServiceClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { requireApiRole } from "@/lib/auth/require-api-role";
 
 interface RouteContext {
   params: Promise<{
@@ -20,6 +21,15 @@ export async function PATCH(
   request: Request,
   context: RouteContext,
 ): Promise<Response> {
+  const auth = await requireApiRole(
+    request,
+    ["admin", "operator"],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const { viewId } = await context.params;
     const body = patchSchema.parse(await request.json());
@@ -77,9 +87,18 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: RouteContext,
 ): Promise<Response> {
+  const auth = await requireApiRole(
+    request,
+    ["admin", "operator"],
+  );
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const { viewId } = await context.params;
 
