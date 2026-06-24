@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { authenticatedFetch } from '@/lib/auth/authenticated-fetch';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 interface DailyMetrics {
   date: string;
@@ -181,14 +184,11 @@ function normalizeAIEffectiveness(value: unknown): AIEffectiveness | null {
 }
 
 async function fetchJson<T>(input: string, signal: AbortSignal): Promise<T> {
-  const response = await fetch(input, {
-    method: 'GET',
-    signal,
-    headers: {
-      Accept: 'application/json',
-    },
-    cache: 'no-store',
-  });
+const response = await authenticatedFetch(input, {
+  method: 'GET',
+  signal,
+  cache: 'no-store',
+});
 
   let payload: unknown = null;
 
@@ -218,6 +218,7 @@ function formatCurrency(value: number): string {
 }
 
 export default function AnalyticsPage() {
+  const router = useRouter();
   const [state, setState] = useState<AnalyticsPageState>({
     metrics: null,
     funnel: [],
@@ -234,6 +235,15 @@ export default function AnalyticsPage() {
     }));
 
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        router.replace('/login?next=/analytics');
+        return;
+      }
+
       const [metricsPayload, funnelPayload, aiPayload] = await Promise.all([
         fetchJson<DailyMetricsResponse>('/api/analytics/daily', signal),
         fetchJson<FunnelResponse>('/api/analytics/funnel', signal),
@@ -292,7 +302,7 @@ export default function AnalyticsPage() {
         error: message,
       });
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const controller = new AbortController();
