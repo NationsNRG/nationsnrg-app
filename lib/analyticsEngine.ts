@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getServiceClient } from '@/lib/supabase/server';
 import type { Database, Json } from '@/types/supabase';
 
 type PublicSchema = Database['public'];
@@ -87,6 +87,9 @@ const DEFAULT_LINKEDIN_MESSAGES = 0;
 const QUALIFIED_LEAD_SCORE_THRESHOLD = 50;
 const PROJECTED_COMMISSION_SCORE_THRESHOLD = 40;
 const PERCENT_SCALE = 100;
+function getSupabase() {
+  return getServiceClient();
+}
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -321,6 +324,7 @@ async function logSystemActivity(params: {
   message: string;
   details?: Json;
 }): Promise<void> {
+  const supabase = getSupabase();
   const payload: SystemActivityInsert = {
     activity_type: params.activityType,
     lead_id: params.leadId ?? null,
@@ -339,8 +343,9 @@ async function logSystemActivity(params: {
 }
 
 class AnalyticsEngine {
-  async generateDailyMetrics(date: Date = new Date()): Promise<DailyMetrics> {
-    const bounds = buildDayBounds(date);
+async generateDailyMetrics(date: Date = new Date()): Promise<DailyMetrics> {
+  const supabase = getSupabase();
+  const bounds = buildDayBounds(date);
 
     const [leadResult, conversationResult, dealResult, messageResult] = await Promise.all([
       supabase
@@ -480,6 +485,7 @@ class AnalyticsEngine {
   }
 
   async getFunnelAnalysis(): Promise<FunnelStage[]> {
+    const supabase = getSupabase();
     const stages = ['new', 'contacted', 'proposal', 'negotiation', 'closed'] as const;
     const funnel: FunnelStage[] = [];
 
@@ -521,6 +527,7 @@ class AnalyticsEngine {
   }
 
   async getAIEffectiveness(): Promise<AIEffectiveness[]> {
+    const supabase = getSupabase();
     const { data, error } = await supabase
       .from('conversation_insights')
       .select('objection_type, led_to_close, led_to_interest')
@@ -568,6 +575,7 @@ class AnalyticsEngine {
   }
 
   async generateExecutiveSummary(weekStart: Date): Promise<ExecutiveSummary> {
+    const supabase = getSupabase();
     const { startDate, endDate, weekEnd } = buildWeekBounds(weekStart);
 
     const { data: metricRows, error: metricError } = await supabase
@@ -715,6 +723,7 @@ class AnalyticsEngine {
   }
 
   private async getTotalLeadCount(): Promise<number> {
+    const supabase = getSupabase();
     const { count, error } = await supabase
       .from('discovered_leads')
       .select('*', { count: 'exact', head: true });
@@ -732,6 +741,7 @@ class AnalyticsEngine {
   }
 
   private async getQualifiedLeadCount(): Promise<number> {
+    const supabase = getSupabase();
     const { data, error } = await supabase
       .from('discovered_leads')
       .select('*');
@@ -750,6 +760,7 @@ class AnalyticsEngine {
   }
 
   private async getEnterpriseLeadCount(): Promise<number> {
+    const supabase = getSupabase();
     const { data, error } = await supabase
       .from('discovered_leads')
       .select('*');
@@ -772,6 +783,7 @@ class AnalyticsEngine {
     startIso: string,
     endIso: string
   ): Promise<number> {
+    const supabase = getSupabase();
     const { count, error } = await supabase
       .from('event_queue')
       .select('*', { count: 'exact', head: true })
@@ -797,6 +809,7 @@ class AnalyticsEngine {
   }
 
   private async calculateProjectedCommission(): Promise<number> {
+    const supabase = getSupabase();
     const { data, error } = await supabase
       .from('discovered_leads')
       .select('*');
