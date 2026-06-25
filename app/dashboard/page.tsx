@@ -271,14 +271,16 @@ useEffect(() => {
       if (!trendResponse.ok) {
         throw new Error(`Failed to load market trends (${trendResponse.status})`);
       }
-      const trendJson = (await trendResponse.json()) as {
-        success?: boolean;
-        trends?: MarketTrend;
-        error?: string;
-      };
-      if (!trendJson.success || !trendJson.trends) {
-        throw new Error(trendJson.error ?? 'Market trends response was invalid');
-      }
+    const trendJson = (await trendResponse.json()) as {
+    ok?: boolean;
+    success?: boolean;
+    trends?: MarketTrend;
+    error?: string;
+    };
+
+    if (!(trendJson.ok ?? trendJson.success) || !trendJson.trends) {
+    throw new Error(trendJson.error ?? 'Market trends response was invalid');
+    }
       setMarketTrend(trendJson.trends);
             if (bestRateResponse) {
         if (bestRateResponse.ok) {
