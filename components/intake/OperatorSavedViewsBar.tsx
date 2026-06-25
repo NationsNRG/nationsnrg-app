@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authenticatedFetch } from "@/lib/auth/authenticated-fetch";
 
 interface SavedView {
   id: string;
@@ -58,8 +59,8 @@ export default function OperatorSavedViewsBar({
       setLoading(true);
       setError(null);
 
-      const response = await fetch(
-        `/api/operator/saved-views?viewScope=${viewScope}`,
+      const response = await authenticatedFetch(
+  `/api/operator/saved-views?viewScope=${viewScope}`,
       );
 
       const data = (await response.json()) as
@@ -96,7 +97,7 @@ export default function OperatorSavedViewsBar({
 
       const parsed = JSON.parse(filterJson) as Record<string, unknown>;
 
-      const response = await fetch("/api/operator/saved-views", {
+      const response = await authenticatedFetch("/api/operator/saved-views", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -167,7 +168,7 @@ export default function OperatorSavedViewsBar({
 
       const parsed = JSON.parse(editFilterJson) as Record<string, unknown>;
 
-      const response = await fetch(`/api/operator/saved-views/${viewId}`, {
+      const response = await authenticatedFetch(`/api/operator/saved-views/${viewId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -219,7 +220,7 @@ export default function OperatorSavedViewsBar({
       setMessage(null);
       setError(null);
 
-      const response = await fetch(`/api/operator/saved-views/${view.id}`, {
+      const response = await authenticatedFetch(`/api/operator/saved-views/${view.id}`, {
         method: "DELETE",
       });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authenticatedFetch } from "@/lib/auth/authenticated-fetch";
 
 interface DashboardSummary {
   totalDeals: number;
@@ -21,7 +22,7 @@ export default function IntakeDashboardKpiStrip() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/intake/dashboard/summary");
+      const response = await authenticatedFetch("/api/intake/dashboard/summary");
       const data = (await response.json()) as
         | {
             ok: true;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authenticatedFetch } from "@/lib/auth/authenticated-fetch";
 
 interface RecentDeal {
   id: string;
@@ -73,7 +74,7 @@ export default function IntakeDashboardQueueCards() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/intake/dashboard/queues");
+      const response = await authenticatedFetch("/api/intake/dashboard/queues");
       const data = (await response.json()) as
         | {
             ok: true;

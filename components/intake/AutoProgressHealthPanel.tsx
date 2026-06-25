@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authenticatedFetch } from "@/lib/auth/authenticated-fetch";
 
 interface StaleDeal {
   id: string;
@@ -18,10 +19,16 @@ interface Signal {
   staleList: StaleDeal[];
 }
 
-function statusColor(status: Signal["healthStatus"]) {
-  if (status === "healthy") return "green";
-  if (status === "warning") return "yellow";
-  return "red";
+function statusClassName(status: Signal["healthStatus"]) {
+  if (status === "healthy") {
+    return "border-green-800 bg-green-950 text-green-300";
+  }
+
+  if (status === "warning") {
+    return "border-yellow-800 bg-yellow-950 text-yellow-300";
+  }
+
+  return "border-red-800 bg-red-950 text-red-300";
 }
 
 export default function AutoProgressHealthPanel() {
@@ -34,7 +41,7 @@ export default function AutoProgressHealthPanel() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch("/api/intake/dashboard/auto-progress-signal");
+      const res = await authenticatedFetch("/api/intake/dashboard/auto-progress-signal");
       const data = await res.json();
 
       if (!res.ok || !data.ok) {
@@ -69,7 +76,7 @@ export default function AutoProgressHealthPanel() {
     );
   }
 
-  const color = statusColor(signal!.healthStatus);
+  const statusClass = statusClassName(signal!.healthStatus);
 
   return (
     <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6 space-y-4">
@@ -98,9 +105,7 @@ export default function AutoProgressHealthPanel() {
         <Metric label="Health Score" value={`${signal!.healthScore}%`} />
       </div>
 
-      <div
-        className={`rounded-xl border border-${color}-800 bg-${color}-950 p-4 text-${color}-300`}
-      >
+      <div className={`rounded-xl border p-4 ${statusClass}`}>
         System Status: <b>{signal!.healthStatus.toUpperCase()}</b>
       </div>
 
