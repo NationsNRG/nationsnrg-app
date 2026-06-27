@@ -12,8 +12,8 @@ export const routeAccess: Record<string, UserRole[]> = {
   "/system/deal-runner": ["admin"],
   "/big-deal-desk": ["admin", "operator"],
   "/portfolio-rollup": ["admin", "operator"],
-  "/supplier/dashboard": ["supplier"],
-  "/supplier/bids": ["supplier"],
+  "/supplier/dashboard": ["admin", "operator", "supplier"],
+  "/supplier/bids": ["admin", "operator", "supplier"],
 };
 
 export function getAllowedRoles(pathname: string): UserRole[] | null {

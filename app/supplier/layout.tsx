@@ -15,31 +15,59 @@ export default function SupplierLayout({
     const [loading, setLoading] = useState(true);
     const [supplier, setSupplier] = useState<any>(null);
 
-    useEffect(() => {
-        checkAuth();
-    }, []);
+    const isPublicSupplierPage =
+        pathname === '/supplier/login' || pathname === '/supplier/register';
+
+useEffect(() => {
+    if (isPublicSupplierPage) {
+        setLoading(false);
+        return;
+    }
+
+    checkAuth();
+}, [isPublicSupplierPage]);
 
     const checkAuth = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
+        try {
+            const {
+                data: { user },
+                error: userError,
+            } = await supabase.auth.getUser();
+
+            console.log("SUPPLIER_LAYOUT_USER", user);
+
+            if (userError || !user) {
+                router.push('/supplier/login');
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('suppliers')
+                .select('*')
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            console.log("SUPPLIER_PROFILE", data);
+            console.log("SUPPLIER_PROFILE_ERROR", error);
+
+            if (error) {
+                console.error(error);
+                router.push('/supplier/register');
+                return;
+            }
+
+            if (!data) {
+                router.push('/supplier/register');
+                return;
+            }
+
+            setSupplier(data);
+        } catch (err) {
+            console.error("SUPPLIER_LAYOUT_EXCEPTION", err);
             router.push('/supplier/login');
-            return;
+        } finally {
+            setLoading(false);
         }
-
-        const { data } = await supabase
-            .from('suppliers')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
-
-        if (!data) {
-            router.push('/supplier/register');
-            return;
-        }
-
-        setSupplier(data);
-        setLoading(false);
     };
 
     if (loading) {
@@ -48,6 +76,10 @@ export default function SupplierLayout({
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
         );
+    }
+
+    if (isPublicSupplierPage) {
+        return <>{children}</>;
     }
 
     const navigation = [
