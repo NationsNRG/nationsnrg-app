@@ -31,7 +31,7 @@ function statusClassName(status: Signal["healthStatus"]) {
   return "border-red-800 bg-red-950 text-red-300";
 }
 
-export default function AutoProgressHealthPanel() {
+export default function PipelineHealthIntelligence() {
   const [loading, setLoading] = useState(true);
   const [signal, setSignal] = useState<Signal | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export default function AutoProgressHealthPanel() {
       setLoading(true);
       setError(null);
 
-      const res = await authenticatedFetch("/api/intake/dashboard/auto-progress-signal");
+      const res = await authenticatedFetch("/api/intake/dashboard/pipeline-health");
       const data = await res.json();
 
       if (!res.ok || !data.ok) {
@@ -86,7 +86,7 @@ export default function AutoProgressHealthPanel() {
             Auto-Progress Health
           </h2>
           <p className="text-sm text-gray-400">
-            Measures system automation performance and deal stagnation.
+            Measures pipeline risk, automation velocity, blocked load, and stage-specific SLA breaches.
           </p>
         </div>
 

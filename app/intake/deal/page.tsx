@@ -6,7 +6,7 @@ import IntakeDashboardKpiStrip from "@/components/intake/IntakeDashboardKpiStrip
 import IntakeDashboardQueueCards from "@/components/intake/IntakeDashboardQueueCards";
 import IntakeDashboardFilterBar from "@/components/intake/IntakeDashboardFilterBar";
 import OperatorSavedViewsBar from "@/components/intake/OperatorSavedViewsBar";
-import AutoProgressHealthPanel from "@/components/intake/AutoProgressHealthPanel";
+import PipelineHealthIntelligence from "@/components/intake/PipelineHealthIntelligence";
 import { getServiceClient } from "@/lib/supabase/server";
 
 interface DealListItem {
@@ -138,7 +138,7 @@ export default async function IntakeDealListPage({
         <div className="mx-auto max-w-7xl space-y-8">
           <QuickActions />
 
-          <AutoProgressHealthPanel />
+          <PipelineHealthIntelligence />
           
           <IntakeDashboardKpiStrip />
 
