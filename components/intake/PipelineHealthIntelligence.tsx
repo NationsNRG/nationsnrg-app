@@ -63,7 +63,7 @@ export default function PipelineHealthIntelligence() {
   if (loading && !signal) {
     return (
       <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6 text-gray-400">
-        Loading auto-progress health...
+        Loading pipeline health intelligence...
       </section>
     );
   }
@@ -83,7 +83,7 @@ export default function PipelineHealthIntelligence() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-lg font-semibold text-white">
-            Auto-Progress Health
+            Pipeline Health Intelligence
           </h2>
           <p className="text-sm text-gray-400">
             Measures pipeline risk, automation velocity, blocked load, and stage-specific SLA breaches.

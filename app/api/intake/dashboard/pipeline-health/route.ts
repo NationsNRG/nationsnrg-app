@@ -8,6 +8,7 @@ interface DealRow {
   id: string;
   business_name: string | null;
   status: string | null;
+  intake_source: string | null;
   created_at: string | null;
 }
 
@@ -91,6 +92,19 @@ function differenceInDays(dateValue: string | null): number {
   return Math.floor((Date.now() - date.getTime()) / (24 * 60 * 60 * 1000));
 }
 
+function isProductionDeal(deal: DealRow): boolean {
+  const source = deal.intake_source?.toLowerCase() ?? "";
+  const name = deal.business_name?.toLowerCase() ?? "";
+
+  if (source.includes("test")) return false;
+  if (source === "operator_test") return false;
+  if (source === "api_intake") return false;
+  if (name.includes("test facility")) return false;
+  if (name.includes("miami distribution center")) return false;
+
+  return true;
+}
+
 export async function GET(request: Request): Promise<NextResponse> {
   const auth = await requireApiRole(request, ["admin", "operator"]);
 
@@ -112,7 +126,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     ] = await Promise.all([
       supabase
         .from("deals")
-        .select("id,business_name,status,created_at")
+        .select("id,business_name,status,intake_source,created_at")
         .not("status", "in", "(won,lost)")
         .limit(1000),
 
@@ -146,8 +160,9 @@ export async function GET(request: Request): Promise<NextResponse> {
     if (successfulProgressionsError) throw new Error(successfulProgressionsError.message);
     if (attemptedProgressionsError) throw new Error(attemptedProgressionsError.message);
 
-    const deals = (activeDeals ?? []) as DealRow[];
-    const events = (progressionEvents ?? []) as ProgressionEventRow[];
+const allDeals = (activeDeals ?? []) as DealRow[];
+const deals = allDeals.filter(isProductionDeal);
+const events = (progressionEvents ?? []) as ProgressionEventRow[];
 
     const latestEventByDealId = new Map<string, ProgressionEventRow>();
 
@@ -219,6 +234,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       ok: true,
       signal: {
         totalDeals,
+        excludedTestDeals: allDeals.length - deals.length,
         recentlyUpdated: recentlyProgressed ?? 0,
         staleDeals: staleDeals.length,
         healthScore,
