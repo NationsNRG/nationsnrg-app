@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getServiceClient } from "@/lib/supabase/server";
 import type { Database, Json } from '@/types/supabase';
 
 type PublicSchema = Database['public'];
@@ -55,6 +55,8 @@ function createErrorResponse(
     { status }
   );
 }
+
+const supabase = getServiceClient();
 
 async function logSystemActivity(params: {
   activityType: string;
@@ -176,11 +178,11 @@ export async function GET(
     }
 
     if (!data) {
-      await logSystemActivity({
-        activityType: 'best_rate_lead_not_found',
-        leadId,
-        message: 'Lead not found',
-      });
+    await logSystemActivity({
+      activityType: 'best_rate_lead_not_found',
+      leadId: null,
+      message: `Lead not found: ${leadId}`,
+    });
 
       return createErrorResponse('Lead not found', 404);
     }
@@ -205,11 +207,11 @@ export async function GET(
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
 
-    await logSystemActivity({
-      activityType: 'best_rate_route_failed',
-      leadId: leadId.length > 0 ? leadId : null,
-      message,
-    });
+await logSystemActivity({
+  activityType: 'best_rate_route_failed',
+  leadId: null,
+  message: leadId.length > 0 ? `${message} | leadId=${leadId}` : message,
+});
 
     return createErrorResponse(message, 500);
   }

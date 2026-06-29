@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { authenticatedFetch } from '@/lib/auth/authenticated-fetch';
 import { formatInsightTaxonomyLabel } from '../../../lib/insights/taxonomy'
 
 type InsightStatus = 'draft' | 'approved' | 'published' | 'archived' | 'failed';
@@ -106,36 +106,28 @@ export default function InsightsStudioPage() {
     setLoading(true);
     setPageError(null);
 
-    const [insightsRes, variantsRes] = await Promise.all([
-      supabase
-        .from('content_insights')
-        .select(
-          'id, slug, title, canonical_summary, canonical_body, angle, audience, seo_keyword, source_type, confidence_score, status, created_at, updated_at, published_at'
-        )
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('content_insight_variants')
-        .select('id, insight_id, variant_type, title, body, cta, status, created_at, updated_at')
-        .order('created_at', { ascending: false }),
-    ]);
+const response = await authenticatedFetch('/api/insights/pipeline/studio-data', {
+  method: 'GET',
+  cache: 'no-store',
+});
 
-    const errors = [insightsRes.error, variantsRes.error].filter(Boolean);
+const json = await response.json();
 
-    if (errors.length > 0) {
-      setPageError(errors.map((error) => error?.message ?? 'Unknown error').join(' | '));
-      setInsights([]);
-      setVariants([]);
-      setLoading(false);
-      return;
-    }
+if (!response.ok || !json.success) {
+  setPageError(json.error ?? 'Failed to load insights studio data');
+  setInsights([]);
+  setVariants([]);
+  setLoading(false);
+  return;
+}
 
-    const loadedInsights = Array.isArray(insightsRes.data)
-      ? (insightsRes.data as ContentInsightRow[])
-      : [];
+const loadedInsights: ContentInsightRow[] = Array.isArray(json.insights)
+  ? (json.insights as ContentInsightRow[])
+  : [];
 
-    const loadedVariants = Array.isArray(variantsRes.data)
-      ? (variantsRes.data as ContentInsightVariantRow[])
-      : [];
+const loadedVariants: ContentInsightVariantRow[] = Array.isArray(json.variants)
+  ? (json.variants as ContentInsightVariantRow[])
+  : [];
 
     setInsights(loadedInsights);
     setVariants(loadedVariants);

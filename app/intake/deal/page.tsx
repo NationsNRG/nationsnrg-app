@@ -7,6 +7,7 @@ import IntakeDashboardQueueCards from "@/components/intake/IntakeDashboardQueueC
 import IntakeDashboardFilterBar from "@/components/intake/IntakeDashboardFilterBar";
 import OperatorSavedViewsBar from "@/components/intake/OperatorSavedViewsBar";
 import AutoProgressHealthPanel from "@/components/intake/AutoProgressHealthPanel";
+import { getServiceClient } from "@/lib/supabase/server";
 
 interface DealListItem {
   id: string;
@@ -40,29 +41,62 @@ interface DealListResponse {
 async function getDeals(
   searchParams: Record<string, string | string[] | undefined>,
 ): Promise<DealListResponse> {
-  const params = new URLSearchParams();
+  const supabase = getServiceClient();
 
-  for (const [key, value] of Object.entries(searchParams)) {
-    if (typeof value === "string" && value.length > 0) {
-      params.set(key, value);
-    }
+  const search = typeof searchParams.search === "string" ? searchParams.search.trim() : "";
+  const status = typeof searchParams.status === "string" ? searchParams.status.trim() : "";
+  const state = typeof searchParams.state === "string" ? searchParams.state.trim() : "";
+  const minBill = typeof searchParams.minBill === "string" ? searchParams.minBill.trim() : "";
+  const page = typeof searchParams.page === "string" ? Math.max(1, Number(searchParams.page) || 1) : 1;
+
+  const pageSize = 25;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from("deals")
+    .select("id,business_name,state,estimated_monthly_bill,intake_source,status,created_at", {
+      count: "exact",
+    })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (search) {
+    query = query.ilike("business_name", `%${search}%`);
   }
 
-const appUrl =
-  process.env.NEXT_PUBLIC_APP_URL ??
-  (process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "https://nationsnrg.com");
-
-const response = await fetch(`${appUrl}/api/intake/deal?${params.toString()}`, {
-  cache: "no-store",
-});
-
-  if (!response.ok) {
-    throw new Error(`Failed to load deals: ${response.status}`);
+  if (status) {
+    query = query.eq("status", status);
   }
 
-  return (await response.json()) as DealListResponse;
+  if (state) {
+    query = query.eq("state", state);
+  }
+
+  if (minBill) {
+    query = query.gte("estimated_monthly_bill", Number(minBill) || 0);
+  }
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    throw new Error(`Failed to load deals: ${error.message}`);
+  }
+
+  return {
+    ok: true,
+    deals: data ?? [],
+    pagination: {
+      page,
+      totalPages: Math.max(1, Math.ceil((count ?? 0) / pageSize)),
+    },
+    filters: {
+      search,
+      status,
+      state,
+      minBill,
+    },
+  };
 }
 
 function formatCurrency(value: number | null): string {
@@ -89,9 +123,10 @@ function formatDate(value: string | null): string {
 export default async function IntakeDealListPage({
   searchParams,
 }: {
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const data = await getDeals(searchParams);
+  const resolvedSearchParams = await searchParams;
+  const data = await getDeals(resolvedSearchParams);
   const deals = data.deals ?? [];
   const pagination = data.pagination ?? { page: 1, totalPages: 1 };
   const filters = data.filters ?? {};
