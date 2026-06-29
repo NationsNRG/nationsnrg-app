@@ -1,6 +1,47 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "@/lib/supabase/server";
 import { requireApiRole } from "@/lib/auth/require-api-role";
+
+interface DealHealthRow {
+  id: string;
+  business_name: string | null;
+  status: string | null;
+  created_at: string | null;
+  updated_at?: string | null;
+}
+
+function daysAgo(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function staleCutoffForStatus(status: string | null): string {
+  if (status === "new") return daysAgo(7);
+  if (status === "blocked") return daysAgo(14);
+
+  if (
+    status === "supplier_engaged" ||
+    status === "pricing_requested" ||
+    status === "quoted" ||
+    status === "proposal_sent" ||
+    status === "package_ready"
+  ) {
+    return daysAgo(21);
+  }
+
+  return daysAgo(30);
+}
+
+function getActivityDate(deal: DealHealthRow): string | null {
+  return deal.updated_at ?? deal.created_at;
+}
+
+function isDealStale(deal: DealHealthRow): boolean {
+  const activityDate = getActivityDate(deal);
+
+  if (!activityDate) return true;
+
+  return activityDate < staleCutoffForStatus(deal.status);
+}
 
 export async function GET(
   request: Request,
@@ -15,70 +56,62 @@ export async function GET(
   }
 
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+  const supabase = getServiceClient();
 
-    const now = new Date();
-    const staleCutoff = new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2); // 48h
-    const warningCutoff = new Date(now.getTime() - 1000 * 60 * 60 * 24); // 24h
+    const recentCutoff = daysAgo(2);
 
     const [
-      { count: totalDeals, error: totalError },
+      { data: activeDeals, error: activeDealsError },
       { count: recentlyUpdated, error: recentError },
-      { count: staleDeals, error: staleError },
-      { data: staleList, error: staleListError },
     ] = await Promise.all([
-      supabase.from("deals").select("id", { count: "exact", head: true }),
+      supabase
+        .from("deals")
+        .select("id,business_name,status,created_at,updated_at")
+        .not("status", "in", "(won,lost)")
+        .limit(500),
 
       supabase
         .from("deal_auto_progression_events")
         .select("id", { count: "exact", head: true })
-        .gte("created_at", warningCutoff.toISOString()),
-
-      supabase
-        .from("deals")
-        .select("id", { count: "exact", head: true })
-        .lt("created_at", staleCutoff.toISOString())
-        .not("status", "in", "(won,lost)"),
-
-      supabase
-        .from("deals")
-        .select("id,business_name,status,created_at")
-        .lt("created_at", staleCutoff.toISOString())
-        .not("status", "in", "(won,lost)")
-        .order("created_at", { ascending: true })
-        .limit(5),
+        .gte("created_at", recentCutoff),
     ]);
 
-    if (totalError) throw new Error(totalError.message);
+    if (activeDealsError) throw new Error(activeDealsError.message);
     if (recentError) throw new Error(recentError.message);
-    if (staleError) throw new Error(staleError.message);
-    if (staleListError) throw new Error(staleListError.message);
+
+    const deals = (activeDeals ?? []) as DealHealthRow[];
+    const staleDeals = deals.filter(isDealStale);
+    const totalDeals = deals.length;
+
+    const staleRatio =
+      totalDeals > 0 ? staleDeals.length / totalDeals : 0;
 
     const healthScore =
-      totalDeals && totalDeals > 0
-        ? Math.round(((recentlyUpdated ?? 0) / totalDeals) * 100)
-        : 100;
+      totalDeals > 0 ? Math.max(0, Math.round((1 - staleRatio) * 100)) : 100;
 
     let healthStatus: "healthy" | "warning" | "critical" = "healthy";
 
-    if ((staleDeals ?? 0) > 10) {
+    if (staleRatio >= 0.6 && staleDeals.length >= 5) {
       healthStatus = "critical";
-    } else if ((staleDeals ?? 0) > 3) {
+    } else if (staleRatio >= 0.3 && staleDeals.length >= 3) {
       healthStatus = "warning";
     }
 
     return NextResponse.json({
       ok: true,
       signal: {
-        totalDeals: totalDeals ?? 0,
+        totalDeals,
         recentlyUpdated: recentlyUpdated ?? 0,
-        staleDeals: staleDeals ?? 0,
+        staleDeals: staleDeals.length,
         healthScore,
         healthStatus,
-        staleList: staleList ?? [],
+        staleList: staleDeals
+          .sort((a, b) => {
+            const aDate = getActivityDate(a) ?? "";
+            const bDate = getActivityDate(b) ?? "";
+            return aDate.localeCompare(bDate);
+          })
+          .slice(0, 5),
       },
     });
   } catch (error) {
